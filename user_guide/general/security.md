@@ -75,7 +75,26 @@ fn dashboard(&self, ctx: &mut Ctx) -> Response {
 
 ### Penyimpanan password
 
-Demo memakai **SHA-256 + salt acak per-user** (`User`/`models/user.rs`) agar ringan tanpa
-dependensi berat. Untuk **produksi**, ganti ke algoritma khusus password (argon2/bcrypt).
+Password di-hash dengan **bcrypt** (`User`/`models/user.rs`) — salt disertakan otomatis di
+dalam hash, cost adaptif. Layak produksi.
+
+```rust
+let hash = bcrypt::hash(password, bcrypt::DEFAULT_COST)?;   // saat membuat user
+bcrypt::verify(password, &stored_hash)?;                    // saat login
+```
 
 User demo hasil seed: `admin` / `admin123`.
+
+## Production / Environment
+
+Atur `environment` di `config/app.toml`:
+
+```toml
+environment = "development"   # atau "production"
+```
+
+Pada `production`:
+- Cookie sesi diberi flag **`Secure`** (hanya dikirim lewat HTTPS).
+- Respons error **500 disembunyikan** (body diganti "Internal Server Error", detail tidak bocor).
+
+Lihat juga [Deployment](deployment.md) untuk static files & session persisten.

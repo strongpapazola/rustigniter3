@@ -59,8 +59,17 @@ Cookie sesi diset otomatis (`HttpOnly; Path=/; SameSite=Lax`). Untuk membaca coo
 ctx.cookie("nama");   // Option<String>
 ```
 
-## Catatan
+## Backend Penyimpanan
 
-Store bawaan **in-memory** (hilang saat restart, tidak dibagikan antar-proses). Untuk produksi,
-implementasikan backend persisten (file/DB/Redis) — strukturnya sudah dipisah di
-`system/session.rs` (`SessionStore`).
+Pilih di `config/app.toml`:
+
+```toml
+[session]
+driver = "memory"   # "memory" (hilang saat restart) | "file" (persisten)
+path = "storage/sessions"
+```
+
+- **memory** — cepat, cocok untuk dev; hilang saat restart.
+- **file** — tiap sesi disimpan sebagai `storage/sessions/<id>.json`; **bertahan antar-restart**.
+
+Backend lain (DB/Redis) bisa ditambahkan di `system/session.rs` (`SessionStore`/`Backend`).

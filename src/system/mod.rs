@@ -9,6 +9,7 @@ pub mod controller;
 pub mod database;
 pub mod hooks;
 pub mod loader;
+pub mod migration;
 pub mod query;
 pub mod registry;
 pub mod request;
@@ -23,6 +24,7 @@ pub use config::Config;
 pub use controller::{Controller, Ctx};
 pub use database::{Database, Dialect};
 pub use hooks::{Hook, HookResult};
+pub use migration::{Migration, Migrator};
 pub use registry::Registry;
 pub use request::Request;
 pub use response::Response;
@@ -84,12 +86,18 @@ impl App {
             response = hook.after(&mut ctx, response);
         }
 
-        // 4) Simpan sesi + atur cookie.
+        // 4) Hardening: di production, sembunyikan detail error 500.
+        if self.config.is_production() && response.status >= 500 {
+            response = Response::text(response.status, "Internal Server Error");
+        }
+
+        // 5) Simpan sesi + atur cookie (Secure di production).
+        let secure = self.config.is_production();
         self.sessions.save(&ctx.session);
         if ctx.session.destroyed() {
-            response = response.with_header("Set-Cookie", &expire_session_cookie());
+            response = response.with_header("Set-Cookie", &expire_session_cookie(secure));
         } else if ctx.session.is_new() {
-            response = response.with_header("Set-Cookie", &session_cookie(&ctx.session.id));
+            response = response.with_header("Set-Cookie", &session_cookie(&ctx.session.id, secure));
         }
         response
     }
@@ -116,14 +124,16 @@ impl App {
     }
 }
 
-/// Nilai header Set-Cookie untuk sesi (HttpOnly + SameSite=Lax; tanpa Secure karena dev http).
-fn session_cookie(id: &str) -> String {
-    format!("{SESSION_COOKIE}={id}; Path=/; HttpOnly; SameSite=Lax")
+/// Nilai header Set-Cookie untuk sesi (HttpOnly + SameSite=Lax; `Secure` di production).
+fn session_cookie(id: &str, secure: bool) -> String {
+    let secure = if secure { "; Secure" } else { "" };
+    format!("{SESSION_COOKIE}={id}; Path=/; HttpOnly; SameSite=Lax{secure}")
 }
 
 /// Set-Cookie untuk menghapus cookie sesi (logout).
-fn expire_session_cookie() -> String {
-    format!("{SESSION_COOKIE}=; Path=/; Max-Age=0; HttpOnly; SameSite=Lax")
+fn expire_session_cookie(secure: bool) -> String {
+    let secure = if secure { "; Secure" } else { "" };
+    format!("{SESSION_COOKIE}=; Path=/; Max-Age=0; HttpOnly; SameSite=Lax{secure}")
 }
 
 /// Halaman 404 bawaan saat tidak ada controller/override yang cocok.

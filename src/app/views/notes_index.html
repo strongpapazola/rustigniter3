@@ -22,17 +22,28 @@
 			padding: .7rem .9rem; margin-bottom: 1rem; }
 		.errors ul { margin: 0; padding-left: 1.1rem; }
 		.errors li { display: list-item; border: 0; padding: .15rem 0; margin: 0; background: none; }
+		.search { display: flex; gap: .5rem; margin-bottom: 1rem; }
+		.search input { flex: 1; padding: .5rem .7rem; border: 1px solid #ccc; border-radius: 8px; }
+		.search button { background: #555; }
+		.pager { display: flex; justify-content: space-between; align-items: center;
+			margin: 1rem 0; font-size: .9rem; color: #666; }
+		.pager a { padding: .35rem .7rem; border: 1px solid #ddd; border-radius: 8px; }
 	</style>
 </head>
 <body>
 	<main>
-		<h1>Catatan ({{ notes | length }})</h1>
+		<h1>Catatan ({{ total }})</h1>
 
 		{% if errors %}
 		<div class="errors">
 			<ul>{% for e in errors %}<li>{{ e }}</li>{% endfor %}</ul>
 		</div>
 		{% endif %}
+
+		<form class="search" action="{{ base_url('notes') }}" method="get">
+			<input type="text" name="q" value="{{ q }}" placeholder="Cari catatan… (LIKE)">
+			<button type="submit">Cari</button>
+		</form>
 
 		<ul>
 			{% for n in notes %}
@@ -41,9 +52,15 @@
 				<span class="meta">{{ n.created }}</span>
 			</li>
 			{% else %}
-			<li class="empty">Belum ada catatan.</li>
+			<li class="empty">{% if q %}Tidak ada catatan cocok "{{ q }}".{% else %}Belum ada catatan.{% endif %}</li>
 			{% endfor %}
 		</ul>
+
+		<div class="pager">
+			{% if has_prev %}<a href="{{ base_url('notes') }}?page={{ prev }}&q={{ q }}">← Sebelumnya</a>{% else %}<span></span>{% endif %}
+			<span>Halaman {{ page }} / {{ total_pages }}</span>
+			{% if has_next %}<a href="{{ base_url('notes') }}?page={{ next }}&q={{ q }}">Berikutnya →</a>{% else %}<span></span>{% endif %}
+		</div>
 
 		<form action="{{ base_url('notes/add') }}" method="post">
 			<input type="hidden" name="csrf_token" value="{{ csrf_token }}">

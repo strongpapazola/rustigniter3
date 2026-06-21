@@ -62,6 +62,22 @@ host = "127.0.0.1"
 port = 8099
 ```
 
+## Perintah CLI
+
+```bash
+cargo run                      # jalankan server (= serve)
+cargo run -- migrate           # terapkan migrasi
+cargo run -- migrate:status    # status migrasi
+cargo run -- db:seed           # isi data contoh
+```
+
+Selengkapnya: [CLI & Migrations](cli.md).
+
+## Static files
+
+Berkas di `public/` dilayani di prefix `/assets/`, mis. `public/app.css` →
+`/assets/app.css`. Lihat [Deployment](deployment.md).
+
 ## Menjalankan Test
 
 ```bash

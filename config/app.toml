@@ -2,6 +2,10 @@
 #
 # Akses dari controller: ctx.config_item("key") atau ctx.config().base_url("...")
 
+# Lingkungan: "development" atau "production".
+# production -> cookie sesi diberi flag Secure + pesan error 500 disembunyikan.
+environment = "development"
+
 # Base URL aplikasi. Dipakai oleh helper url & view. Kosongkan untuk auto.
 base_url = "http://127.0.0.1:8099/"
 
@@ -15,6 +19,11 @@ permitted_uri_chars = "a-z 0-9~%.:_\\-"
 [server]
 host = "127.0.0.1"
 port = 8099
+
+# Penyimpanan sesi: "memory" (hilang saat restart) atau "file" (persisten).
+[session]
+driver = "memory"
+path = "storage/sessions"
 
 # Item bebas lain bisa ditaruh di sini dan diambil via config_item().
 [custom]

@@ -56,6 +56,18 @@ impl Config {
         join_url(&prefix, uri)
     }
 
+    /// Lingkungan aplikasi: "development" (default) atau "production".
+    /// Memengaruhi cookie `Secure` & verbositas error.
+    pub fn environment(&self) -> String {
+        self.item("environment")
+            .unwrap_or_else(|| "development".to_string())
+    }
+
+    /// True bila environment = "production".
+    pub fn is_production(&self) -> bool {
+        self.environment().eq_ignore_ascii_case("production")
+    }
+
     /// Host bind server (default "127.0.0.1").
     pub fn server_host(&self) -> String {
         self.item("server.host").unwrap_or_else(|| "127.0.0.1".to_string())

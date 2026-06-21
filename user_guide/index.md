@@ -37,7 +37,9 @@ terasa familier bagi pengguna CodeIgniter, tetapi aman secara tipe dan cepat.
 - [Models](general/models.md)
 - [Config & Auto-load](general/config.md)
 - [Hooks — Memperluas Inti Framework](general/hooks.md)
+- [CLI & Migrations](general/cli.md)
 - [Security (XSS, CSRF, Auth)](general/security.md)
+- [Deployment (env, static, session persisten)](general/deployment.md)
 
 ### Referensi Library
 - [Form Validation](libraries/form_validation.md)

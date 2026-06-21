@@ -14,6 +14,34 @@ impl Note {
         db.table("notes").order_by("id", "DESC").get()
     }
 
+    /// Halaman catatan dengan pencarian opsional. Mengembalikan (baris, total cocok).
+    /// Mendemokan `like` + `count` + `limit`/`offset` dari Query Builder.
+    pub fn paginate(
+        db: &Database,
+        search: &str,
+        page: i64,
+        per_page: i64,
+    ) -> Result<(Vec<Value>, i64), String> {
+        let page = page.max(1);
+        // Builder dibuat ulang per pemakaian karena get()/count() mengonsumsi self.
+        let make = || {
+            let q = db.table("notes");
+            if search.is_empty() {
+                q
+            } else {
+                q.like("text", search)
+            }
+        };
+        let total = make().count()?;
+        let offset = (page - 1) * per_page;
+        let rows = make()
+            .order_by("id", "DESC")
+            .limit(per_page)
+            .offset(offset)
+            .get()?;
+        Ok((rows, total))
+    }
+
     /// Satu catatan berdasarkan id, atau `None`.
     pub fn find(db: &Database, id: i64) -> Result<Option<Value>, String> {
         db.table("notes").where_("id", id).first()

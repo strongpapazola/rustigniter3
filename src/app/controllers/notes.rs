@@ -25,20 +25,45 @@ impl Controller for Notes {
 
 impl Notes {
     fn index(&self, ctx: &mut Ctx) -> Response {
-        self.render_index(ctx, Vec::new(), "")
+        let q = ctx.query("q").unwrap_or("").trim().to_string();
+        let page = ctx
+            .query("page")
+            .and_then(|s| s.parse::<i64>().ok())
+            .unwrap_or(1)
+            .max(1);
+        self.render_index(ctx, &q, page, Vec::new(), "")
     }
 
-    /// Render daftar catatan + form, opsional dengan pesan error & input lama (untuk
-    /// menampilkan kembali setelah validasi gagal -> status 422).
-    fn render_index(&self, ctx: &mut Ctx, errors: Vec<String>, old_text: &str) -> Response {
-        let notes = Note::all(ctx.db()).unwrap_or_default();
+    /// Render daftar catatan (dengan search + pagination) + form. `errors`/`old_text`
+    /// dipakai saat menampilkan kembali setelah validasi gagal (status 422).
+    fn render_index(
+        &self,
+        ctx: &mut Ctx,
+        search: &str,
+        page: i64,
+        errors: Vec<String>,
+        old_text: &str,
+    ) -> Response {
+        const PER_PAGE: i64 = 5;
+        let (notes, total) =
+            Note::paginate(ctx.db(), search, page, PER_PAGE).unwrap_or((Vec::new(), 0));
+        let total_pages = ((total + PER_PAGE - 1) / PER_PAGE).max(1);
         let invalid = !errors.is_empty();
+
         let mut resp = ctx.view(
             "notes_index",
             json!({
                 "notes": notes,
                 "errors": errors,
                 "old_text": old_text,
+                "q": search,
+                "page": page,
+                "total": total,
+                "total_pages": total_pages,
+                "has_prev": page > 1,
+                "has_next": page < total_pages,
+                "prev": page - 1,
+                "next": page + 1,
             }),
         );
         if invalid {
@@ -68,8 +93,8 @@ impl Notes {
         let text = ctx.post("text").unwrap_or("").trim().to_string();
 
         if !errors.is_empty() {
-            // Gagal -> tampilkan kembali form dengan pesan error + input lama.
-            return self.render_index(ctx, errors.messages(), &text);
+            // Gagal -> tampilkan kembali form (halaman 1, tanpa search) + error + input lama.
+            return self.render_index(ctx, "", 1, errors.messages(), &text);
         }
 
         // Lolos -> simpan lalu redirect (pola Post/Redirect/Get).

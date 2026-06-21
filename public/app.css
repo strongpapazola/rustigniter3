@@ -1,0 +1,13 @@
+/* RustIgniter — contoh berkas statis, dilayani dari public/ via /assets/app.css */
+:root {
+	--ri-red: #d33;
+}
+
+.ri-badge {
+	display: inline-block;
+	padding: .2rem .6rem;
+	border-radius: 999px;
+	background: var(--ri-red);
+	color: #fff;
+	font: 600 .8rem/1 system-ui, sans-serif;
+}

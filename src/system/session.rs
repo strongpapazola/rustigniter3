@@ -11,35 +11,67 @@
 //! - **csrf**      — token anti-CSRF per sesi (lihat `hooks`/`Ctx`).
 
 use rand::RngCore;
+use serde::{Deserialize, Serialize};
 use serde_json::{Map, Value};
 use std::collections::HashMap;
+use std::path::PathBuf;
 use std::sync::{Arc, Mutex};
 
 const CSRF_KEY: &str = "__csrf";
 
 /// Representasi tersimpan di store antar-request.
-#[derive(Clone, Default)]
+#[derive(Clone, Default, Serialize, Deserialize)]
 struct Stored {
+    #[serde(default)]
     data: Map<String, Value>,
     /// Flash yang menunggu untuk request berikutnya.
+    #[serde(default)]
     flash: Map<String, Value>,
 }
 
-/// Store sesi in-memory yang bisa di-clone (berbagi `Arc`).
-#[derive(Clone, Default)]
+/// Backend penyimpanan sesi.
+enum Backend {
+    /// In-memory (hilang saat restart).
+    Memory(Mutex<HashMap<String, Stored>>),
+    /// Berkas JSON per-sesi di sebuah direktori (persisten antar-restart).
+    File(PathBuf),
+}
+
+/// Store sesi yang bisa di-clone (berbagi `Arc`).
+#[derive(Clone)]
 pub struct SessionStore {
-    inner: Arc<Mutex<HashMap<String, Stored>>>,
+    backend: Arc<Backend>,
 }
 
 impl SessionStore {
+    /// Store in-memory (default).
     pub fn new() -> Self {
-        Self::default()
+        Self {
+            backend: Arc::new(Backend::Memory(Mutex::new(HashMap::new()))),
+        }
+    }
+
+    /// Store berbasis berkas di direktori `dir` (tahan restart).
+    pub fn file(dir: &str) -> Self {
+        let _ = std::fs::create_dir_all(dir);
+        Self {
+            backend: Arc::new(Backend::File(PathBuf::from(dir))),
+        }
+    }
+
+    fn read(&self, sid: &str) -> Option<Stored> {
+        match &*self.backend {
+            Backend::Memory(m) => m.lock().ok()?.get(sid).cloned(),
+            Backend::File(dir) => {
+                let raw = std::fs::read_to_string(dir.join(format!("{sid}.json"))).ok()?;
+                serde_json::from_str(&raw).ok()
+            }
+        }
     }
 
     /// Muat sesi berdasarkan id dari cookie; buat baru bila tidak ada/kedaluwarsa.
     pub fn load(&self, sid: Option<String>) -> Session {
-        let store = self.inner.lock().expect("session mutex poisoned");
-        match sid.as_ref().and_then(|id| store.get(id).cloned()) {
+        match sid.as_ref().and_then(|id| self.read(id)) {
             Some(stored) => Session {
                 id: sid.unwrap(),
                 data: stored.data,
@@ -52,21 +84,32 @@ impl SessionStore {
         }
     }
 
-    /// Simpan sesi kembali ke store (atau hapus bila di-destroy). Flash yang baru di-set
-    /// (`flash_next`) menjadi flash yang tersedia di request berikutnya.
+    /// Simpan sesi (atau hapus bila di-destroy). Flash yang baru di-set (`flash_next`)
+    /// menjadi flash yang tersedia di request berikutnya.
     pub fn save(&self, session: &Session) {
-        let mut store = self.inner.lock().expect("session mutex poisoned");
-        if session.destroyed {
-            store.remove(&session.id);
-            return;
+        let stored = Stored {
+            data: session.data.clone(),
+            flash: session.flash_next.clone(),
+        };
+        match &*self.backend {
+            Backend::Memory(m) => {
+                if let Ok(mut map) = m.lock() {
+                    if session.destroyed {
+                        map.remove(&session.id);
+                    } else {
+                        map.insert(session.id.clone(), stored);
+                    }
+                }
+            }
+            Backend::File(dir) => {
+                let path = dir.join(format!("{}.json", session.id));
+                if session.destroyed {
+                    let _ = std::fs::remove_file(path);
+                } else if let Ok(json) = serde_json::to_string(&stored) {
+                    let _ = std::fs::write(path, json);
+                }
+            }
         }
-        store.insert(
-            session.id.clone(),
-            Stored {
-                data: session.data.clone(),
-                flash: session.flash_next.clone(),
-            },
-        );
     }
 }
 

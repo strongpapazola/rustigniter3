@@ -15,8 +15,10 @@ Request → Router → Hook.before → Controller/Resource → Hook.after → Re
 ## Mulai cepat
 
 ```bash
-cargo run        # http://127.0.0.1:8099
-cargo test       # menjalankan unit test
+cargo run                   # jalankan server di http://127.0.0.1:8099
+cargo run -- migrate:status # status migrasi
+cargo run -- migrate        # terapkan migrasi
+cargo test                  # menjalankan unit test
 ```
 
 - `/` — halaman selamat datang
@@ -36,9 +38,11 @@ cargo test       # menjalankan unit test
 | Form Validation | ✅ |
 | REST resource (routing sadar verb, JSON in/out) | ✅ |
 | Hooks / Middleware (before/after, halt) | ✅ |
-| Session + flashdata (cookie, in-memory store) | ✅ |
-| Auth (login/logout, route terproteksi, password hash) | ✅ |
+| Session + flashdata (cookie; store memory/file persisten) | ✅ |
+| Auth (login/logout, route terproteksi, password **bcrypt**) | ✅ |
 | Security: XSS auto-escape, CSRF token | ✅ |
+| CLI + migrations berversi (`migrate`/`rollback`/`status`/`seed`) | ✅ |
+| Hardening: env dev/prod, cookie `Secure`, static file serving | ✅ |
 
 ## Dokumentasi
 
@@ -47,7 +51,8 @@ User Guide bergaya CodeIgniter 3 ada di **[`user_guide/index.md`](user_guide/ind
 - [Memulai](user_guide/general/getting_started.md)
 - [URL](user_guide/general/urls.md) · [Routing](user_guide/general/routing.md)
 - [Controllers](user_guide/general/controllers.md) · [Views](user_guide/general/views.md) · [Models](user_guide/general/models.md)
-- [Config & Auto-load](user_guide/general/config.md) · [Hooks](user_guide/general/hooks.md) · [Security](user_guide/general/security.md)
+- [Config & Auto-load](user_guide/general/config.md) · [Hooks](user_guide/general/hooks.md) · [CLI & Migrations](user_guide/general/cli.md)
+- [Security](user_guide/general/security.md) · [Deployment](user_guide/general/deployment.md)
 - [Form Validation](user_guide/libraries/form_validation.md) · [Sessions](user_guide/libraries/sessions.md) · [REST Resource](user_guide/libraries/rest.md)
 - [Query Builder](user_guide/database/query_builder.md) · [URL Helper](user_guide/helpers/url_helper.md)
 

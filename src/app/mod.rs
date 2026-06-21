@@ -6,9 +6,10 @@
 
 pub mod controllers;
 pub mod hooks;
+pub mod migrations;
 pub mod models;
 
-use crate::system::{Database, Dialect, Hook, Registry, Resource};
+use crate::system::{Database, Hook, Migration, Registry, Resource};
 use controllers::api_notes::ApiNotes;
 use controllers::auth::Auth;
 use controllers::notes::Notes;
@@ -36,49 +37,14 @@ pub fn register_hooks() -> Vec<Box<dyn Hook>> {
     ]
 }
 
-/// Buat skema (idempotent) dan, bila `seed`, isi data contoh saat tabel kosong.
-/// DDL menyesuaikan dialek driver aktif.
-pub fn migrate(db: &Database, seed: bool) -> Result<(), String> {
-    let ddl = match db.dialect() {
-        Dialect::Sqlite => {
-            "CREATE TABLE IF NOT EXISTS notes (\
-                id INTEGER PRIMARY KEY AUTOINCREMENT, \
-                text TEXT NOT NULL, \
-                created TEXT NOT NULL DEFAULT (datetime('now'))\
-            )"
-        }
-        Dialect::Postgres => {
-            "CREATE TABLE IF NOT EXISTS notes (\
-                id BIGSERIAL PRIMARY KEY, \
-                text TEXT NOT NULL, \
-                created TEXT NOT NULL DEFAULT to_char(now(), 'YYYY-MM-DD HH24:MI:SS')\
-            )"
-        }
-    };
-    db.execute(ddl, &[])?;
+/// Daftar migrasi aplikasi (dipakai CLI & bootstrap).
+pub fn migrations() -> Vec<Migration> {
+    migrations::all()
+}
 
-    // Tabel users untuk autentikasi.
-    let users_ddl = match db.dialect() {
-        Dialect::Sqlite => {
-            "CREATE TABLE IF NOT EXISTS users (\
-                id INTEGER PRIMARY KEY AUTOINCREMENT, \
-                username TEXT NOT NULL UNIQUE, \
-                password_hash TEXT NOT NULL, \
-                salt TEXT NOT NULL\
-            )"
-        }
-        Dialect::Postgres => {
-            "CREATE TABLE IF NOT EXISTS users (\
-                id BIGSERIAL PRIMARY KEY, \
-                username TEXT NOT NULL UNIQUE, \
-                password_hash TEXT NOT NULL, \
-                salt TEXT NOT NULL\
-            )"
-        }
-    };
-    db.execute(users_ddl, &[])?;
-
-    if seed && db.table("notes").get()?.is_empty() {
+/// Isi data contoh (idempotent: hanya saat tabel kosong).
+pub fn seed(db: &Database) -> Result<(), String> {
+    if db.table("notes").get()?.is_empty() {
         for text in [
             "Catatan pertama di RustIgniter",
             "Query Builder bekerja",
@@ -87,9 +53,7 @@ pub fn migrate(db: &Database, seed: bool) -> Result<(), String> {
             Note::create(db, text)?;
         }
     }
-
-    // Seed user demo: admin / admin123.
-    if seed && db.table("users").get()?.is_empty() {
+    if db.table("users").get()?.is_empty() {
         User::create(db, "admin", "admin123")?;
     }
     Ok(())

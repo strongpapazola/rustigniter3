@@ -49,6 +49,47 @@ db.table("notes").where_("id", 5).first()?;        // Option<Value>
 > `where` adalah kata-kunci Rust, jadi method-nya **`where_`**. Beberapa `where_` digabung
 > dengan `AND`.
 
+### WHERE lanjutan, JOIN, GROUP BY
+
+```rust
+db.table("notes")
+    .where_op("id", ">", 3)              // AND id > ?
+    .or_where("pinned", true)            // OR pinned = ?
+    .where_in("status", vec!["a", "b"])  // AND status IN (?, ?)
+    .like("text", "rust")                // AND text LIKE '%rust%'
+    .or_like("title", "rust")            // OR title LIKE '%rust%'
+    .get()?;
+
+db.table("notes")
+    .select("users.name, notes.text")
+    .join("users", "users.id = notes.user_id", "LEFT")  // LEFT JOIN ... ON ...
+    .group_by("users.id")
+    .get()?;
+```
+
+| Method | SQL |
+|---|---|
+| `where_(col, v)` / `or_where(col, v)` | `col = ?` digabung AND / OR |
+| `where_op(col, op, v)` | `col OP ?` (mis. `>`, `<`, `!=`) |
+| `where_in(col, vec![...])` | `col IN (?, …)` |
+| `like(col, p)` / `or_like(col, p)` | `col LIKE '%p%'` |
+| `join(table, on, kind)` | `KIND JOIN table ON on` (kind: INNER/LEFT/RIGHT) |
+| `group_by(col)` | `GROUP BY col` |
+
+### Pagination & count
+
+```rust
+let total = db.table("notes").like("text", q).count()?;     // COUNT(*) cocok
+let rows  = db.table("notes")
+    .like("text", q)
+    .order_by("id", "DESC")
+    .limit(per_page).offset((page - 1) * per_page)           // LIMIT n OFFSET m
+    .get()?;
+```
+
+Contoh nyata pagination + search ada di `Note::paginate` (`src/app/models/note.rs`) dan
+controller `Notes::index` — buka `/notes?q=rust&page=2`.
+
 ## INSERT
 
 ```rust
