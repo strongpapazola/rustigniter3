@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="id">
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<title>Selamat Datang di {{ app_name }}</title>
+	<style>
+		:root { color-scheme: light dark; }
+		body {
+			font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+			margin: 0; min-height: 100vh; display: grid; place-items: center;
+			background: #f6f7f9; color: #20232a;
+		}
+		.card {
+			background: #fff; max-width: 640px; width: calc(100% - 3rem);
+			padding: 2.5rem 2.75rem; border-radius: 16px;
+			box-shadow: 0 10px 40px rgba(0,0,0,.08); border: 1px solid #ececf1;
+		}
+		h1 { margin: 0 0 .25rem; font-size: 2rem; }
+		.badge {
+			display: inline-block; font-size: .8rem; font-weight: 600;
+			background: #fdecec; color: #d33; padding: .2rem .6rem; border-radius: 999px;
+		}
+		p { line-height: 1.6; color: #444; }
+		code { background: #f1f1f4; padding: .15rem .4rem; border-radius: 5px; font-size: .9em; }
+		.foot { margin-top: 1.75rem; font-size: .85rem; color: #888; }
+		a { color: #d33; }
+	</style>
+</head>
+<body>
+	<main class="card">
+		<span class="badge">v{{ version }}</span>
+		<h1>Selamat datang di {{ app_name }} 🦀</h1>
+		<p>
+			Halaman ini dirender oleh controller <code>Welcome::index</code> melalui
+			<code>ctx.view("welcome_message", ...)</code> — sebuah framework web di Rust
+			yang mengambil ide dari CodeIgniter.
+		</p>
+		<p>
+			Coba juga rute <code><a href="{{ base_url('welcome/index') }}">/welcome/index</a></code>,
+			atau rute yang tak terdaftar untuk melihat halaman 404.
+		</p>
+		<p>
+			Demo CRUD + Query Builder: <code><a href="{{ base_url('notes') }}">/notes</a></code>
+			(MVC penuh dengan model &amp; database SQLite).
+		</p>
+		<p class="foot">
+			Base URL: <code>{{ base_url() }}</code><br>
+			Edit view ini di <code>src/app/views/welcome_message.html</code>
+			dan controller di <code>src/app/controllers/welcome.rs</code>.
+		</p>
+	</main>
+</body>
+</html>

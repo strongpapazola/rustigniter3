@@ -1,0 +1,8 @@
+# RustIgniter — autoload  (~ application/config/autoload.php)
+#
+# Daftar komponen yang dipreload saat boot. Untuk milestone 1 baru "helpers"
+# yang dipakai (mis. helper "url" mengaktifkan fungsi base_url di view).
+
+helpers = ["url"]
+libraries = []
+models = []

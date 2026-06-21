@@ -1,0 +1,30 @@
+# RustIgniter — routing  (~ application/config/routes.php)
+#
+# Reserved routes (sama seperti CodeIgniter):
+#   default_controller   -> controller saat URI kosong  (format "class" atau "class/method")
+#   not_found_override   -> controller/method saat tidak ada match (CI: 404_override)
+#   translate_uri_dashes -> ganti '-' jadi '_' pada nama controller/method
+
+default_controller = "welcome"
+not_found_override = ""
+translate_uri_dashes = false
+
+# Custom routes: remap pola URI ke "controller/method".
+# Placeholder ala CI:  (:any) -> satu segmen apa saja,  (:num) -> angka.
+# Backreference $1, $2, ... merujuk grup yang tertangkap.
+#
+# REST API resource (M4): kedua URL diarahkan ke resource `notes_api`.
+# Aksi sebenarnya ditentukan oleh verb HTTP di dalam adapter Resource,
+# jadi nama aksi "_resource" hanya placeholder.
+[[routes]]
+from = "api/notes"
+to   = "notes_api/_resource"
+
+[[routes]]
+from = "api/notes/(:num)"
+to   = "notes_api/_resource/$1"
+
+# Contoh lain (dikomentari):
+# [[routes]]
+# from = "blog/(:any)"
+# to   = "blog/post/$1"

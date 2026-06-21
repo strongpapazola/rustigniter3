@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="id">
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<title>Catatan #{{ note.id }} — RustIgniter</title>
+	<style>
+		body { font-family: system-ui, sans-serif; margin: 0; background: #f6f7f9; color: #20232a; }
+		main { max-width: 560px; margin: 3rem auto; background: #fff; padding: 2rem 2.25rem;
+			border-radius: 16px; box-shadow: 0 10px 40px rgba(0,0,0,.08); border: 1px solid #ececf1; }
+		h1 { margin: 0 0 .25rem; font-size: 1.4rem; }
+		.meta { color: #999; font-size: .85rem; margin-bottom: 1.25rem; }
+		.text { font-size: 1.15rem; line-height: 1.6; }
+		a { color: #d33; text-decoration: none; }
+	</style>
+</head>
+<body>
+	<main>
+		<h1>Catatan #{{ note.id }}</h1>
+		<div class="meta">Dibuat: {{ note.created }}</div>
+		<p class="text">{{ note.text }}</p>
+		<p><a href="{{ base_url('notes') }}">← kembali ke daftar</a></p>
+	</main>
+</body>
+</html>

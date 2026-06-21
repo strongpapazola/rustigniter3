@@ -1,0 +1,8 @@
+# Artefak build Rust
+/target
+
+# Backup editor
+**/*.rs.bk
+
+# Berkas database lokal (dibuat otomatis saat boot)
+/storage/

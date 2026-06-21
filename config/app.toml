@@ -1,0 +1,21 @@
+# RustIgniter — application config  (~ application/config/config.php)
+#
+# Akses dari controller: ctx.config_item("key") atau ctx.config().base_url("...")
+
+# Base URL aplikasi. Dipakai oleh helper url & view. Kosongkan untuk auto.
+base_url = "http://127.0.0.1:8099/"
+
+# Prefix index file pada URL (CI: index_page). Kosong = clean URL.
+index_page = ""
+
+# Karakter pemisah segmen URI yang diizinkan (informasional untuk milestone 1).
+permitted_uri_chars = "a-z 0-9~%.:_\\-"
+
+# Alamat bind server dev.
+[server]
+host = "127.0.0.1"
+port = 8099
+
+# Item bebas lain bisa ditaruh di sini dan diambil via config_item().
+[custom]
+app_name = "RustIgniter"

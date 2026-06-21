@@ -1,0 +1,23 @@
+[package]
+name = "rustigniter"
+version = "3.0.0"
+edition = "2021"
+description = "A web framework for Rust, inspired by the ideas of CodeIgniter 3"
+license = "Apache-2.0"
+
+[[bin]]
+name = "rustigniter"
+path = "src/main.rs"
+
+[dependencies]
+tokio = { version = "1", features = ["full"] }
+hyper = { version = "1", features = ["server", "http1"] }
+hyper-util = { version = "0.1", features = ["tokio"] }
+http-body-util = "0.1"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+toml = "0.8"
+minijinja = { version = "2", features = ["loader"] }
+regex = "1"
+rusqlite = { version = "0.32", features = ["bundled"] }
+tokio-postgres = "0.7"

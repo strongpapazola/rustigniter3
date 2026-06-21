@@ -1,0 +1,23 @@
+# RustIgniter — konfigurasi database  (~ application/config/database.php)
+#
+# Pilih driver lewat `driver`. Abstraksi `Database` (Arc<dyn Driver>) membuat
+# controller & model tidak peduli backend yang dipakai.
+
+driver = "sqlite"          # "sqlite" | "postgres"
+
+# Jalankan migrasi + seed data contoh saat boot bila tabel masih kosong.
+seed = true
+
+# --- Driver SQLite (default, self-contained) ---
+# Path berkas (relatif ke CWD); folder induk dibuat otomatis. ":memory:" = sementara.
+[sqlite]
+path = "storage/rustigniter.db"
+
+# --- Driver PostgreSQL ---
+# Dipakai bila driver = "postgres". Tanpa TLS (NoTls).
+[postgres]
+host = "127.0.0.1"
+port = 5433
+user = "rustigniter"
+password = "rahasia"
+dbname = "rustigniter"
