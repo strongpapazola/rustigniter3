@@ -12,7 +12,18 @@ Request → Router → Hook.before → Controller/Resource → Hook.after → Re
                                       └─ Database + Query Builder + Model
 ```
 
-## Mulai cepat
+## Mulai cepat (Docker — direkomendasikan untuk publik)
+
+```bash
+docker compose up --build
+```
+
+Buka: <http://127.0.0.1:8099>
+
+Data runtime (SQLite DB, logs, sessions, upload lokal) disimpan di Docker volumes:
+`rustigniter-storage` dan `rustigniter-uploads`.
+
+## Mulai cepat (lokal tanpa Docker)
 
 ```bash
 cargo run                   # jalankan server di http://127.0.0.1:8099
@@ -23,6 +34,7 @@ cargo test                  # menjalankan unit test
 
 - `/` — halaman selamat datang
 - `/notes` — demo CRUD HTML (form + validasi)
+- `/uploads` — demo upload lokal / bucket
 - `/api/notes` — demo REST API (JSON)
 
 ## Fitur
@@ -75,6 +87,10 @@ user_guide/  dokumentasi
 
 ## Kebutuhan
 
+Untuk Docker:
+- Docker + Docker Compose
+
+Untuk lokal tanpa Docker:
 - Rust 1.74+ & Cargo
 - C compiler (`cc`/`gcc`) untuk SQLite *bundled*
 

@@ -17,7 +17,7 @@ permitted_uri_chars = "a-z 0-9~%.:_\\-"
 
 # Alamat bind server dev.
 [server]
-host = "127.0.0.1"
+host = "0.0.0.0"
 port = 8099
 
 # Penyimpanan sesi: "memory" (hilang saat restart) atau "file" (persisten).

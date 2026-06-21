@@ -1,0 +1,17 @@
+# Rust build artifacts
+/target
+
+# Git & local editor files
+/.git
+.gitignore
+.dockerignore
+*.swp
+*.swo
+
+# Runtime data (mounted as volumes in compose)
+/storage
+/public/uploads
+
+# Local temp/logs
+/tmp
+*.log

@@ -2,6 +2,29 @@
 
 Hal-hal yang relevan saat menjalankan RustIgniter di luar pengembangan.
 
+## Docker / Compose
+
+Cara termudah menjalankan RustIgniter untuk publik:
+
+```bash
+docker compose up --build
+```
+
+Service `rustigniter` membuka port `8099:8099` dan memakai volume:
+
+- `rustigniter-storage` → `/app/storage` (SQLite DB, logs, sessions)
+- `rustigniter-uploads` → `/app/public/uploads` (upload lokal)
+
+Compose juga menyediakan service opsional:
+
+```bash
+docker compose --profile postgres up -d postgres  # Postgres di localhost:5433
+docker compose --profile s3 up -d minio           # MinIO di localhost:9100, console 9101
+```
+
+Setelah mengaktifkan profile opsional, ubah `config/database.toml` atau `config/storage.toml`
+sesuai kredensial yang ada di `docker-compose.yml`.
+
 ## Environment
 
 ```toml

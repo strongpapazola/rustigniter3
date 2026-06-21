@@ -7,7 +7,20 @@
 - (Opsional) server **PostgreSQL** bila memakai driver `postgres` — lihat
   [Config & Auto-load](config.md) dan [Query Builder](../database/query_builder.md)
 
-## Menjalankan
+## Menjalankan dengan Docker (direkomendasikan untuk publik)
+
+Dari root proyek:
+
+```bash
+docker compose up --build
+```
+
+Buka di browser: `http://127.0.0.1:8099`.
+
+Data runtime (SQLite DB, logs, sessions, upload lokal) disimpan di Docker volumes:
+`rustigniter-storage` dan `rustigniter-uploads`.
+
+## Menjalankan lokal tanpa Docker
 
 Dari dalam folder proyek (`RustIgniter-3.0.0/`):
 
@@ -18,13 +31,14 @@ cargo run
 Server akan menyala (default `http://127.0.0.1:8099`):
 
 ```
-RustIgniter 3.0.0 berjalan di http://127.0.0.1:8099
+RustIgniter 3.0.0 berjalan di http://0.0.0.0:8099
 ```
 
 Buka di browser:
 
 - `/` — halaman selamat datang (controller `Welcome`)
 - `/notes` — demo CRUD berbasis HTML (form + validasi)
+- `/uploads` — demo upload lokal / bucket
 - `/api/notes` — demo REST API (JSON)
 
 > **Catatan:** semua path konfigurasi (`config/`, `src/app/views/`, `storage/`) relatif
