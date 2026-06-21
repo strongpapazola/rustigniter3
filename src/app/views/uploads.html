@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="id">
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<title>Unggah Berkas — RustIgniter</title>
+	<style>
+		body { font-family: system-ui, sans-serif; margin: 0; background: #f6f7f9; color: #20232a; }
+		main { max-width: 560px; margin: 3rem auto; background: #fff; padding: 2rem 2.25rem;
+			border-radius: 16px; box-shadow: 0 10px 40px rgba(0,0,0,.08); border: 1px solid #ececf1; }
+		h1 { margin: 0 0 1rem; font-size: 1.5rem; }
+		.success { background: #eafaf0; border: 1px solid #b8e6c8; color: #1a7d46; }
+		.error { background: #fdecec; border: 1px solid #f5c2c2; color: #a11; }
+		.flash { border-radius: 10px; padding: .6rem .8rem; margin-bottom: 1rem; font-size: .9rem; }
+		ul { list-style: none; padding: 0; }
+		li { padding: .5rem .7rem; border: 1px solid #eee; border-radius: 8px; margin-bottom: .4rem; }
+		form { display: flex; gap: .5rem; margin-top: 1rem; align-items: center; }
+		button { padding: .55rem 1rem; border: 0; border-radius: 8px; background: #d33; color: #fff; font-weight: 600; cursor: pointer; }
+		.empty { color: #888; font-style: italic; }
+	</style>
+</head>
+<body>
+	<main>
+		<h1>Unggah Berkas ({{ files | length }})</h1>
+		<p style="color:#888;font-size:.85rem;margin-top:-.5rem">storage driver: <code>{{ driver }}</code></p>
+
+		{% if flash.success %}<div class="flash success">{{ flash.success }}</div>{% endif %}
+		{% if flash.error %}<div class="flash error">{{ flash.error }}</div>{% endif %}
+
+		<ul>
+			{% for f in files %}
+			<li>📄 <a href="{{ f.url }}">{{ f.filename }}</a> <span style="color:#999;font-size:.8rem">{{ f.created }}</span></li>
+			{% else %}
+			<li class="empty">Belum ada berkas.</li>
+			{% endfor %}
+		</ul>
+
+		<form action="{{ base_url('uploads/save') }}" method="post" enctype="multipart/form-data">
+			<input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+			<input type="file" name="berkas" required>
+			<button type="submit">Unggah</button>
+		</form>
+	</main>
+</body>
+</html>

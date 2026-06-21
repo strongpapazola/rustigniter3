@@ -10,8 +10,10 @@ seed = true
 
 # --- Driver SQLite (default, self-contained) ---
 # Path berkas (relatif ke CWD); folder induk dibuat otomatis. ":memory:" = sementara.
+# pool_size = jumlah koneksi dalam pool (WAL diaktifkan untuk DB berkas).
 [sqlite]
 path = "storage/rustigniter.db"
+pool_size = 4
 
 # --- Driver PostgreSQL ---
 # Dipakai bila driver = "postgres". Tanpa TLS (NoTls).

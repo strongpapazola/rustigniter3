@@ -1,0 +1,21 @@
+# RustIgniter — penyimpanan berkas upload.
+#
+# driver = "local" (simpan ke disk) atau "s3" (bucket S3-compatible: AWS S3 / MinIO /
+# Cloudflare R2 / DigitalOcean Spaces). Untuk pakai bucket: ganti driver ke "s3" lalu
+# isi kredensial di [s3] — tidak perlu ubah kode.
+
+driver = "local"
+
+# Disimpan ke folder ini; dilayani sebagai static di prefix url_base (lihat /assets).
+[local]
+dir = "public/uploads"
+url_base = "assets/uploads"
+
+# Bucket S3-compatible. Biarkan kosong bila tidak dipakai.
+[s3]
+endpoint = "http://127.0.0.1:9100"   # AWS: "https://s3.<region>.amazonaws.com"
+region = "us-east-1"
+bucket = "uploads"
+access_key = ""
+secret_key = ""
+public_base = ""                      # URL publik objek; kosong = "{endpoint}/{bucket}"

@@ -135,6 +135,7 @@ db.query("SELECT COUNT(*) AS n FROM notes", &[])?;   // Vec<Value>
 
 ## Catatan Konkurensi
 
-Koneksi dibungkus `Arc<Mutex<Connection>>` agar aman dibagi antar task. Karena
-`App::handle` berjalan sinkron, kunci tak pernah melewati `.await`. Untuk beban tinggi,
-connection pool bisa ditambahkan di balik abstraksi `Database` tanpa mengubah controller.
+SQLite memakai **connection pool** (ukuran `pool_size` di `config/database.toml`) dengan
+checkout yang memblokir saat semua koneksi sedang dipakai; DB berkas mengaktifkan **WAL** +
+`busy_timeout` agar pembacaan bisa berbarengan. `:memory:` dipaksa 1 koneksi (tiap koneksi
+memori adalah DB terpisah). PostgreSQL memakai klien async yang aman dibagi (pipelining).

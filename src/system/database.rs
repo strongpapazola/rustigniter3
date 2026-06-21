@@ -19,7 +19,8 @@ use rusqlite::types::{Value as SqlValue, ValueRef};
 use rusqlite::Connection;
 use serde_json::{Map, Value};
 use std::path::Path;
-use std::sync::{Arc, Mutex};
+use std::sync::{Arc, Condvar, Mutex};
+use std::time::Duration;
 use tokio_postgres::types::{ToSql, Type};
 
 /// Dialek SQL — memengaruhi gaya placeholder & DDL (lihat `app::migrate`).
@@ -46,10 +47,15 @@ pub struct Database {
 }
 
 impl Database {
-    /// Buka database SQLite (default framework). `":memory:"` untuk DB sementara.
+    /// Buka database SQLite dengan ukuran pool default. `":memory:"` untuk DB sementara.
     pub fn open(path: &str) -> Result<Self, String> {
+        Self::open_sqlite(path, 4)
+    }
+
+    /// Buka database SQLite dengan ukuran pool koneksi tertentu.
+    pub fn open_sqlite(path: &str, pool_size: usize) -> Result<Self, String> {
         Ok(Self {
-            driver: Arc::new(SqliteDriver::open(path)?),
+            driver: Arc::new(SqliteDriver::open(path, pool_size)?),
         })
     }
 
@@ -93,13 +99,59 @@ impl Database {
 // Driver SQLite
 // ====================================================================
 
-/// Driver SQLite berbasis `rusqlite`. Koneksi dibungkus `Mutex` (sinkron).
+/// Pool koneksi SQLite sederhana: kumpulan koneksi siap-pakai dengan checkout yang
+/// memblokir (Condvar) saat kosong. Untuk `:memory:` ukuran dipaksa 1 (tiap koneksi
+/// `:memory:` adalah database terpisah, jadi harus satu koneksi bersama).
+struct SqlitePool {
+    conns: Mutex<Vec<Connection>>,
+    available: Condvar,
+}
+
+impl SqlitePool {
+    /// Ambil satu koneksi (blokir bila semua sedang dipakai).
+    fn checkout(&self) -> Connection {
+        let mut conns = self.conns.lock().expect("pool mutex");
+        while conns.is_empty() {
+            conns = self.available.wait(conns).expect("pool condvar");
+        }
+        conns.pop().unwrap()
+    }
+
+    /// Kembalikan koneksi ke pool.
+    fn checkin(&self, conn: Connection) {
+        self.conns.lock().expect("pool mutex").push(conn);
+        self.available.notify_one();
+    }
+}
+
+/// RAII: kembalikan koneksi ke pool saat keluar scope (termasuk saat `?`/panic).
+struct PooledConn<'a> {
+    pool: &'a SqlitePool,
+    conn: Option<Connection>,
+}
+
+impl Drop for PooledConn<'_> {
+    fn drop(&mut self) {
+        if let Some(conn) = self.conn.take() {
+            self.pool.checkin(conn);
+        }
+    }
+}
+
+impl std::ops::Deref for PooledConn<'_> {
+    type Target = Connection;
+    fn deref(&self) -> &Connection {
+        self.conn.as_ref().expect("koneksi ter-checkout")
+    }
+}
+
+/// Driver SQLite berbasis `rusqlite` dengan pool koneksi.
 pub struct SqliteDriver {
-    conn: Arc<Mutex<Connection>>,
+    pool: Arc<SqlitePool>,
 }
 
 impl SqliteDriver {
-    fn open(path: &str) -> Result<Self, String> {
+    fn open(path: &str, pool_size: usize) -> Result<Self, String> {
         if path != ":memory:" {
             if let Some(parent) = Path::new(path).parent() {
                 if !parent.as_os_str().is_empty() {
@@ -108,23 +160,38 @@ impl SqliteDriver {
                 }
             }
         }
-        let conn = Connection::open(path).map_err(|e| format!("gagal membuka db '{path}': {e}"))?;
+        // :memory: harus 1 koneksi (DB tiap koneksi terpisah).
+        let size = if path == ":memory:" { 1 } else { pool_size.max(1) };
+        let mut conns = Vec::with_capacity(size);
+        for _ in 0..size {
+            conns.push(new_connection(path)?);
+        }
         Ok(Self {
-            conn: Arc::new(Mutex::new(conn)),
+            pool: Arc::new(SqlitePool {
+                conns: Mutex::new(conns),
+                available: Condvar::new(),
+            }),
         })
+    }
+
+    fn acquire(&self) -> PooledConn<'_> {
+        PooledConn {
+            pool: &self.pool,
+            conn: Some(self.pool.checkout()),
+        }
     }
 }
 
 impl Driver for SqliteDriver {
     fn execute(&self, sql: &str, params: &[Value]) -> Result<usize, String> {
-        let conn = self.conn.lock().expect("db mutex poisoned");
+        let conn = self.acquire();
         let p = to_sqlite_params(params);
         conn.execute(sql, rusqlite::params_from_iter(p.iter()))
             .map_err(|e| format!("execute gagal: {e}\nSQL: {sql}"))
     }
 
     fn insert(&self, sql: &str, params: &[Value]) -> Result<i64, String> {
-        let conn = self.conn.lock().expect("db mutex poisoned");
+        let conn = self.acquire();
         let p = to_sqlite_params(params);
         conn.execute(sql, rusqlite::params_from_iter(p.iter()))
             .map_err(|e| format!("insert gagal: {e}\nSQL: {sql}"))?;
@@ -132,7 +199,7 @@ impl Driver for SqliteDriver {
     }
 
     fn query(&self, sql: &str, params: &[Value]) -> Result<Vec<Value>, String> {
-        let conn = self.conn.lock().expect("db mutex poisoned");
+        let conn = self.acquire();
         let mut stmt = conn
             .prepare(sql)
             .map_err(|e| format!("prepare gagal: {e}\nSQL: {sql}"))?;
@@ -160,6 +227,17 @@ impl Driver for SqliteDriver {
     fn dialect(&self) -> Dialect {
         Dialect::Sqlite
     }
+}
+
+/// Buka satu koneksi SQLite; untuk DB berkas aktifkan WAL + busy_timeout agar
+/// pembacaan bisa berbarengan dan penulisan menunggu alih-alih error SQLITE_BUSY.
+fn new_connection(path: &str) -> Result<Connection, String> {
+    let conn = Connection::open(path).map_err(|e| format!("gagal membuka db '{path}': {e}"))?;
+    if path != ":memory:" {
+        let _ = conn.busy_timeout(Duration::from_secs(5));
+        let _ = conn.execute_batch("PRAGMA journal_mode=WAL; PRAGMA synchronous=NORMAL;");
+    }
+    Ok(conn)
 }
 
 fn to_sqlite_params(params: &[Value]) -> Vec<SqlValue> {

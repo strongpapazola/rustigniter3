@@ -8,19 +8,13 @@
 //! Method publik tanpa prefix khusus menjadi action. Karena Rust tak punya refleksi,
 //! pemetaan action -> method ditulis eksplisit di `dispatch`.
 
-use crate::system::{Controller, Ctx, Response};
+use crate::system::{Ctx, Response};
 use serde_json::json;
 
 pub struct Welcome;
 
-impl Controller for Welcome {
-    fn dispatch(&self, action: &str, ctx: &mut Ctx) -> Option<Response> {
-        match action {
-            "index" => Some(self.index(ctx)),
-            _ => None, // action tak dikenal -> framework membalas 404
-        }
-    }
-}
+// Dispatch otomatis: aksi "index" -> Welcome::index. Aksi lain -> 404.
+crate::actions!(Welcome { index });
 
 impl Welcome {
     /// Halaman index controller ini (CI: `$this->load->view('welcome_message')`).

@@ -7,21 +7,12 @@
 //!                                          invalid -> render ulang index + error)
 
 use crate::app::models::note::Note;
-use crate::system::{Controller, Ctx, Response, Validator};
+use crate::system::{Ctx, Response, Validator};
 use serde_json::json;
 
 pub struct Notes;
 
-impl Controller for Notes {
-    fn dispatch(&self, action: &str, ctx: &mut Ctx) -> Option<Response> {
-        match action {
-            "index" => Some(self.index(ctx)),
-            "show" => Some(self.show(ctx)),
-            "add" => Some(self.add(ctx)),
-            _ => None,
-        }
-    }
-}
+crate::actions!(Notes { index, show, add });
 
 impl Notes {
     fn index(&self, ctx: &mut Ctx) -> Response {

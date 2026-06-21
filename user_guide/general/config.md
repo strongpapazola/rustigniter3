@@ -6,12 +6,21 @@ Konfigurasi RustIgniter berupa berkas **TOML** di folder `config/` (padanan
 ## `config/app.toml`
 
 ```toml
-base_url   = "http://127.0.0.1:8099/"
-index_page = ""
+environment = "development"   # "development" | "production"
+base_url    = "http://127.0.0.1:8099/"
+index_page  = ""
 
 [server]
 host = "127.0.0.1"
 port = 8099
+
+[session]
+driver = "memory"             # "memory" | "file"
+path = "storage/sessions"
+
+[log]
+level = "info"                # error | warn | info | debug
+path = "storage/logs/app.log"
 
 [custom]
 app_name = "RustIgniter"

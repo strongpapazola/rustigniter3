@@ -14,12 +14,19 @@ pub struct RequestLogger;
 
 impl Hook for RequestLogger {
     fn before(&self, ctx: &mut Ctx) -> HookResult {
-        println!("→ {} {}", ctx.method(), ctx.request.path);
+        let line = format!("--> {} {}", ctx.method(), ctx.request.path);
+        println!("{line}");
+        ctx.log().info(&line); // ke berkas log
         HookResult::Continue
     }
 
-    fn after(&self, _ctx: &mut Ctx, response: Response) -> Response {
-        println!("← {}", response.status);
+    fn after(&self, ctx: &mut Ctx, response: Response) -> Response {
+        println!("<-- {}", response.status);
+        if response.status >= 500 {
+            ctx.log().error(&format!("respons {}", response.status));
+        } else {
+            ctx.log().info(&format!("respons {}", response.status));
+        }
         response
     }
 }

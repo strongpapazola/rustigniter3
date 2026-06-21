@@ -6,19 +6,13 @@ Controller adalah inti aplikasimu: ia menentukan bagaimana sebuah request ditang
 
 ```rust
 // src/app/controllers/welcome.rs
-use crate::system::{Controller, Ctx, Response};
+use crate::system::{Ctx, Response};
 use serde_json::json;
 
 pub struct Welcome;
 
-impl Controller for Welcome {
-    fn dispatch(&self, action: &str, ctx: &mut Ctx) -> Option<Response> {
-        match action {
-            "index" => Some(self.index(ctx)),
-            _ => None, // aksi tak dikenal -> framework membalas 404
-        }
-    }
-}
+// Bangkitkan dispatch: aksi "index" -> Welcome::index. Aksi lain -> 404.
+crate::actions!(Welcome { index });
 
 impl Welcome {
     fn index(&self, ctx: &mut Ctx) -> Response {
@@ -27,11 +21,15 @@ impl Welcome {
 }
 ```
 
-### Kenapa ada `dispatch`/`match`?
+### Macro `actions!`
 
 CodeIgniter memetakan nama method dari URL ke method PHP lewat **refleksi runtime**. Rust
-tidak punya refleksi, jadi pemetaan `action → fungsi` ditulis eksplisit di `match`. Ini
-satu-satunya "boilerplate" pengganti refleksi — sederhana dan transparan.
+tidak punya refleksi, jadi pemetaan `action → fungsi` dibuat eksplisit. Macro
+`actions!(Ctrl { a, b, c })` membangkitkan `impl Controller` yang mencocokkan nama aksi ke
+method bernama sama (signature `fn(&self, &mut Ctx) -> Response`); aksi tak dikenal → 404.
+
+Tanpa macro, kamu bisa menulis `impl Controller` manual dengan `match action { ... }` — macro
+hanya menghapus boilerplate itu.
 
 ## Mendaftarkan Controller
 

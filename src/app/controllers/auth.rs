@@ -7,21 +7,12 @@
 //!   GET  /dashboard  -> halaman terproteksi (redirect /login bila belum masuk)
 
 use crate::app::models::user::User;
-use crate::system::{Controller, Ctx, Response, Validator};
+use crate::system::{Ctx, Response, Validator};
 use serde_json::json;
 
 pub struct Auth;
 
-impl Controller for Auth {
-    fn dispatch(&self, action: &str, ctx: &mut Ctx) -> Option<Response> {
-        match action {
-            "login" => Some(self.login(ctx)),
-            "logout" => Some(self.logout(ctx)),
-            "dashboard" => Some(self.dashboard(ctx)),
-            _ => None,
-        }
-    }
-}
+crate::actions!(Auth { login, logout, dashboard });
 
 impl Auth {
     fn login(&self, ctx: &mut Ctx) -> Response {

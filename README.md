@@ -43,6 +43,10 @@ cargo test                  # menjalankan unit test
 | Security: XSS auto-escape, CSRF token | ✅ |
 | CLI + migrations berversi (`migrate`/`rollback`/`status`/`seed`) | ✅ |
 | Hardening: env dev/prod, cookie `Secure`, static file serving | ✅ |
+| Macro `actions!` (auto-dispatch controller) | ✅ |
+| Cache (TTL) + Logging berlevel ke berkas | ✅ |
+| File upload (multipart) + Storage (lokal / **bucket S3** SigV4) | ✅ |
+| Connection pool SQLite (WAL) | ✅ |
 
 ## Dokumentasi
 
@@ -54,6 +58,7 @@ User Guide bergaya CodeIgniter 3 ada di **[`user_guide/index.md`](user_guide/ind
 - [Config & Auto-load](user_guide/general/config.md) · [Hooks](user_guide/general/hooks.md) · [CLI & Migrations](user_guide/general/cli.md)
 - [Security](user_guide/general/security.md) · [Deployment](user_guide/general/deployment.md)
 - [Form Validation](user_guide/libraries/form_validation.md) · [Sessions](user_guide/libraries/sessions.md) · [REST Resource](user_guide/libraries/rest.md)
+- [File Upload](user_guide/libraries/uploads.md) · [Cache & Logging](user_guide/libraries/cache_logging.md)
 - [Query Builder](user_guide/database/query_builder.md) · [URL Helper](user_guide/helpers/url_helper.md)
 
 ## Struktur

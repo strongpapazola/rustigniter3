@@ -13,6 +13,7 @@ use crate::system::{Database, Hook, Migration, Registry, Resource};
 use controllers::api_notes::ApiNotes;
 use controllers::auth::Auth;
 use controllers::notes::Notes;
+use controllers::uploads::Uploads;
 use controllers::welcome::Welcome;
 use models::note::Note;
 use models::user::User;
@@ -23,6 +24,7 @@ pub fn register(registry: &mut Registry) {
     registry.register("welcome", Box::new(Welcome));
     registry.register("notes", Box::new(Notes));
     registry.register("auth", Box::new(Auth));
+    registry.register("uploads", Box::new(Uploads));
     // Resource REST: URL-nya diarahkan lewat custom route di config/routes.toml.
     registry.register("notes_api", Box::new(Resource::new(ApiNotes)));
 }

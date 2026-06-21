@@ -4,11 +4,15 @@
 //! meresolusi route, men-dispatch ke controller yang tepat, dan menangani kasus 404.
 //! `main.rs` (analog `index.php`) hanya bertugas bootstrap + menyalakan server.
 
+pub mod cache;
 pub mod config;
 pub mod controller;
 pub mod database;
 pub mod hooks;
 pub mod loader;
+pub mod logger;
+#[macro_use]
+pub mod macros;
 pub mod migration;
 pub mod query;
 pub mod registry;
@@ -17,12 +21,15 @@ pub mod response;
 pub mod rest;
 pub mod router;
 pub mod session;
+pub mod storage;
 pub mod validation;
 pub mod view;
 
+pub use cache::Cache;
 pub use config::Config;
 pub use controller::{Controller, Ctx};
 pub use database::{Database, Dialect};
+pub use logger::{Level, Logger};
 pub use hooks::{Hook, HookResult};
 pub use migration::{Migration, Migrator};
 pub use registry::Registry;
@@ -31,6 +38,7 @@ pub use response::Response;
 pub use rest::{Resource, RestController};
 pub use router::{Dispatch, Router, RoutesConfig};
 pub use session::SessionStore;
+pub use storage::{S3Config, Storage};
 pub use validation::Validator;
 pub use view::View;
 
@@ -46,6 +54,9 @@ pub struct App {
     pub database: Database,
     pub hooks: Vec<Box<dyn Hook>>,
     pub sessions: SessionStore,
+    pub cache: Cache,
+    pub logger: Logger,
+    pub storage: Storage,
 }
 
 impl App {
@@ -64,6 +75,9 @@ impl App {
             &self.view,
             &self.database,
             session,
+            &self.cache,
+            &self.logger,
+            &self.storage,
         );
 
         // 1) Hook `before` — boleh men-short-circuit (mis. auth/CSRF).

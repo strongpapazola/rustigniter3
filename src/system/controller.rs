@@ -10,11 +10,14 @@
 //! - [`Ctx`] adalah pengganti `$this`: ia membawa request, argumen, config, dan view engine,
 //!   serta menyediakan API gaya loader CI (`view`, `vars`, `config_item`, `base_url`).
 
+use crate::system::cache::Cache;
 use crate::system::config::Config;
 use crate::system::database::Database;
-use crate::system::request::Request;
+use crate::system::logger::Logger;
+use crate::system::request::{Request, UploadedFile};
 use crate::system::response::Response;
 use crate::system::session::Session;
+use crate::system::storage::Storage;
 use crate::system::view::View;
 use serde_json::{Map, Value};
 
@@ -36,6 +39,9 @@ pub struct Ctx<'a> {
     config: &'a Config,
     view: &'a View,
     db: &'a Database,
+    cache: &'a Cache,
+    logger: &'a Logger,
+    storage: &'a Storage,
     /// Sesi pengunjung (userdata + flashdata + token CSRF).
     pub session: Session,
     /// Variabel view yang terkumpul (CI: `$this->load->vars()`).
@@ -43,6 +49,7 @@ pub struct Ctx<'a> {
 }
 
 impl<'a> Ctx<'a> {
+    #[allow(clippy::too_many_arguments)]
     pub fn new(
         request: &'a Request,
         args: Vec<String>,
@@ -50,6 +57,9 @@ impl<'a> Ctx<'a> {
         view: &'a View,
         db: &'a Database,
         session: Session,
+        cache: &'a Cache,
+        logger: &'a Logger,
+        storage: &'a Storage,
     ) -> Self {
         Self {
             request,
@@ -57,9 +67,27 @@ impl<'a> Ctx<'a> {
             config,
             view,
             db,
+            cache,
+            logger,
+            storage,
             session,
             vars: Map::new(),
         }
+    }
+
+    /// Akses penyimpanan berkas (lokal atau bucket S3).
+    pub fn storage(&self) -> &Storage {
+        self.storage
+    }
+
+    /// Akses cache (CI: `$this->cache`).
+    pub fn cache(&self) -> &Cache {
+        self.cache
+    }
+
+    /// Akses logger (CI: `log_message()`).
+    pub fn log(&self) -> &Logger {
+        self.logger
     }
 
     /// Nilai cookie request berdasarkan nama.
@@ -115,6 +143,16 @@ impl<'a> Ctx<'a> {
     /// Seluruh data POST — untuk diberikan ke `Validator::new(...)`.
     pub fn post_data(&self) -> &std::collections::HashMap<String, String> {
         &self.request.post
+    }
+
+    /// Berkas unggah pertama untuk sebuah field (CI: `$this->upload`).
+    pub fn file(&self, field: &str) -> Option<&UploadedFile> {
+        self.request.file(field)
+    }
+
+    /// Seluruh berkas unggah.
+    pub fn files(&self) -> &[UploadedFile] {
+        &self.request.files
     }
 
     /// Metode HTTP request ("GET", "POST", "PUT", "DELETE", ...).

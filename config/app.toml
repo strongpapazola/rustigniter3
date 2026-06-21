@@ -25,6 +25,11 @@ port = 8099
 driver = "memory"
 path = "storage/sessions"
 
+# Logging ke berkas. level: error|warn|info|debug (pesan <= level dicatat).
+[log]
+level = "info"
+path = "storage/logs/app.log"
+
 # Item bebas lain bisa ditaruh di sini dan diambil via config_item().
 [custom]
 app_name = "RustIgniter"

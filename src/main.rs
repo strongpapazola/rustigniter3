@@ -20,7 +20,8 @@ use hyper_util::rt::TokioIo;
 use tokio::net::TcpListener;
 
 use system::{
-    App, Config, Database, Migrator, Registry, Request, Router, RoutesConfig, SessionStore, View,
+    App, Cache, Config, Database, Level, Logger, Migrator, Registry, Request, Router, RoutesConfig,
+    S3Config, SessionStore, Storage, View,
 };
 
 /// Titik masuk: dispatch berdasarkan argumen CLI (gaya `php index.php <cmd>` di CI).
@@ -175,6 +176,15 @@ async fn bootstrap() -> Result<App, String> {
         _ => SessionStore::new(),
     };
 
+    let cache = Cache::new();
+    let logger = Logger::new(
+        &config
+            .item("log.path")
+            .unwrap_or_else(|| "storage/logs/app.log".to_string()),
+        Level::parse(&config.item("log.level").unwrap_or_else(|| "info".to_string())),
+    );
+    let storage = build_storage("config/storage.toml", &config);
+
     Ok(App {
         config,
         router,
@@ -183,7 +193,67 @@ async fn bootstrap() -> Result<App, String> {
         database,
         hooks,
         sessions,
+        cache,
+        logger,
+        storage,
     })
+}
+
+/// Bangun `Storage` dari `config/storage.toml` (driver local/s3).
+fn build_storage(path: &str, app_config: &Config) -> Storage {
+    #[derive(serde::Deserialize, Default)]
+    struct LocalCfg {
+        dir: String,
+        url_base: String,
+    }
+    #[derive(serde::Deserialize, Default)]
+    struct S3Cfg {
+        endpoint: String,
+        region: String,
+        bucket: String,
+        access_key: String,
+        secret_key: String,
+        public_base: String,
+    }
+    #[derive(serde::Deserialize, Default)]
+    struct StorageCfg {
+        #[serde(default)]
+        driver: String,
+        #[serde(default)]
+        local: LocalCfg,
+        #[serde(default)]
+        s3: S3Cfg,
+    }
+
+    let cfg: StorageCfg = std::fs::read_to_string(path)
+        .ok()
+        .and_then(|raw| toml::from_str(&raw).ok())
+        .unwrap_or_default();
+
+    if cfg.driver == "s3" {
+        let s = cfg.s3;
+        println!("Storage: S3 {}/{}", s.endpoint, s.bucket);
+        Storage::S3(S3Config {
+            endpoint: s.endpoint,
+            region: if s.region.is_empty() { "us-east-1".into() } else { s.region },
+            bucket: s.bucket,
+            access_key: s.access_key,
+            secret_key: s.secret_key,
+            public_base: s.public_base,
+            client: reqwest::Client::new(),
+        })
+    } else {
+        let dir = if cfg.local.dir.is_empty() { "public/uploads".to_string() } else { cfg.local.dir };
+        let url_base = if cfg.local.url_base.is_empty() {
+            "assets/uploads".to_string()
+        } else {
+            cfg.local.url_base
+        };
+        // url_base diubah jadi URL penuh berbasis base_url aplikasi.
+        let full = app_config.base_url(&url_base);
+        println!("Storage: local ({dir})");
+        Storage::local(&dir, &full)
+    }
 }
 
 /// Baca `config/database.toml`, pilih driver, dan buka koneksi. Kembalikan (Database, seed).
@@ -192,6 +262,8 @@ async fn build_database(path: &str) -> Result<(Database, bool), String> {
     struct SqliteCfg {
         #[serde(default)]
         path: String,
+        #[serde(default)]
+        pool_size: usize,
     }
     #[derive(serde::Deserialize, Default)]
     struct PgCfg {
@@ -247,8 +319,9 @@ async fn build_database(path: &str) -> Result<(Database, bool), String> {
             } else {
                 cfg.sqlite.path.clone()
             };
-            println!("Database: SQLite {path}");
-            Database::open(&path)?
+            let pool = if cfg.sqlite.pool_size == 0 { 4 } else { cfg.sqlite.pool_size };
+            println!("Database: SQLite {path} (pool: {pool})");
+            Database::open_sqlite(&path, pool)?
         }
     };
     Ok((database, cfg.seed))

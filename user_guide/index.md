@@ -45,6 +45,8 @@ terasa familier bagi pengguna CodeIgniter, tetapi aman secara tipe dan cepat.
 - [Form Validation](libraries/form_validation.md)
 - [Sessions](libraries/sessions.md)
 - [REST Resource](libraries/rest.md)
+- [File Upload & Storage (lokal/S3)](libraries/uploads.md)
+- [Cache & Logging](libraries/cache_logging.md)
 
 ### Referensi Database
 - [Query Builder](database/query_builder.md)

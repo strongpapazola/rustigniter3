@@ -11,7 +11,34 @@ pub fn all() -> Vec<Migration> {
     vec![
         Migration { version: 1, name: "create_notes", up: up_notes, down: down_notes },
         Migration { version: 2, name: "create_users", up: up_users, down: down_users },
+        Migration { version: 3, name: "create_uploads", up: up_uploads, down: down_uploads },
     ]
+}
+
+fn up_uploads(db: &Database) -> Result<(), String> {
+    let ddl = match db.dialect() {
+        Dialect::Sqlite => {
+            "CREATE TABLE IF NOT EXISTS uploads (\
+                id INTEGER PRIMARY KEY AUTOINCREMENT, \
+                filename TEXT NOT NULL, \
+                url TEXT NOT NULL, \
+                created TEXT NOT NULL DEFAULT (datetime('now'))\
+            )"
+        }
+        Dialect::Postgres => {
+            "CREATE TABLE IF NOT EXISTS uploads (\
+                id BIGSERIAL PRIMARY KEY, \
+                filename TEXT NOT NULL, \
+                url TEXT NOT NULL, \
+                created TEXT NOT NULL DEFAULT to_char(now(), 'YYYY-MM-DD HH24:MI:SS')\
+            )"
+        }
+    };
+    db.execute(ddl, &[]).map(|_| ())
+}
+
+fn down_uploads(db: &Database) -> Result<(), String> {
+    db.execute("DROP TABLE IF EXISTS uploads", &[]).map(|_| ())
 }
 
 fn up_notes(db: &Database) -> Result<(), String> {
