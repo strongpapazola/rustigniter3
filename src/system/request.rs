@@ -67,6 +67,12 @@ impl Request {
         self.headers.get(&name.to_lowercase()).map(String::as_str)
     }
 
+    /// Ambil nilai cookie berdasarkan nama (di-parse dari header `Cookie`).
+    pub fn cookie(&self, name: &str) -> Option<String> {
+        let raw = self.headers.get("cookie")?;
+        parse_cookies(raw).remove(name)
+    }
+
     /// Isi body sesuai Content-Type:
     /// - `application/x-www-form-urlencoded` -> `post`
     /// - `application/json` -> `json`
@@ -98,6 +104,17 @@ impl Request {
     pub fn query(&self, key: &str) -> Option<&str> {
         self.query.get(key).map(String::as_str)
     }
+}
+
+/// Parse header Cookie "a=1; b=2" menjadi map.
+fn parse_cookies(raw: &str) -> HashMap<String, String> {
+    raw.split(';')
+        .filter_map(|pair| {
+            let pair = pair.trim();
+            pair.split_once('=')
+                .map(|(k, v)| (k.trim().to_string(), v.trim().to_string()))
+        })
+        .collect()
 }
 
 /// Parse "a=1&b=2" menjadi map. Decoding sangat minimal (cukup untuk dev).
@@ -181,6 +198,16 @@ mod tests {
         assert_eq!(r.post("text"), Some("Halo dunia"));
         assert_eq!(r.post("extra"), Some("1"));
         assert_eq!(r.post("none"), None);
+    }
+
+    #[test]
+    fn cookie_diparse_dari_header() {
+        let mut headers = HashMap::new();
+        headers.insert("Cookie".to_string(), "ri_session=abc123; theme=dark".to_string());
+        let r = Request::new("GET", "/").with_headers(headers);
+        assert_eq!(r.cookie("ri_session").as_deref(), Some("abc123"));
+        assert_eq!(r.cookie("theme").as_deref(), Some("dark"));
+        assert_eq!(r.cookie("none"), None);
     }
 
     #[test]

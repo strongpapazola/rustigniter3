@@ -15,6 +15,7 @@ pub mod request;
 pub mod response;
 pub mod rest;
 pub mod router;
+pub mod session;
 pub mod validation;
 pub mod view;
 
@@ -27,8 +28,12 @@ pub use request::Request;
 pub use response::Response;
 pub use rest::{Resource, RestController};
 pub use router::{Dispatch, Router, RoutesConfig};
+pub use session::SessionStore;
 pub use validation::Validator;
 pub use view::View;
+
+/// Nama cookie sesi.
+pub const SESSION_COOKIE: &str = "ri_session";
 
 /// Aplikasi RustIgniter yang sudah dirakit dan siap melayani request.
 pub struct App {
@@ -38,22 +43,28 @@ pub struct App {
     pub registry: Registry,
     pub database: Database,
     pub hooks: Vec<Box<dyn Hook>>,
+    pub sessions: SessionStore,
 }
 
 impl App {
     /// Proses satu request menjadi response.
-    /// Alur: resolve route -> hook `before` -> dispatch (atau 404) -> hook `after`.
+    /// Alur: muat sesi -> hook `before` -> dispatch (atau 404) -> hook `after` -> simpan sesi.
     pub fn handle(&self, request: Request) -> Response {
         let dispatch = self.router.resolve(&request.segments);
+
+        // Muat sesi dari cookie (atau buat baru).
+        let session = self.sessions.load(request.cookie(SESSION_COOKIE));
+
         let mut ctx = Ctx::new(
             &request,
             dispatch.args.clone(),
             &self.config,
             &self.view,
             &self.database,
+            session,
         );
 
-        // 1) Hook `before` — boleh men-short-circuit (mis. auth).
+        // 1) Hook `before` — boleh men-short-circuit (mis. auth/CSRF).
         let mut halted = None;
         for hook in &self.hooks {
             if let HookResult::Halt(resp) = hook.before(&mut ctx) {
@@ -71,6 +82,14 @@ impl App {
         // 3) Hook `after` — selalu dijalankan (logging, header, dll).
         for hook in &self.hooks {
             response = hook.after(&mut ctx, response);
+        }
+
+        // 4) Simpan sesi + atur cookie.
+        self.sessions.save(&ctx.session);
+        if ctx.session.destroyed() {
+            response = response.with_header("Set-Cookie", &expire_session_cookie());
+        } else if ctx.session.is_new() {
+            response = response.with_header("Set-Cookie", &session_cookie(&ctx.session.id));
         }
         response
     }
@@ -95,6 +114,16 @@ impl App {
 
         Response::not_found(default_404_page(dispatch))
     }
+}
+
+/// Nilai header Set-Cookie untuk sesi (HttpOnly + SameSite=Lax; tanpa Secure karena dev http).
+fn session_cookie(id: &str) -> String {
+    format!("{SESSION_COOKIE}={id}; Path=/; HttpOnly; SameSite=Lax")
+}
+
+/// Set-Cookie untuk menghapus cookie sesi (logout).
+fn expire_session_cookie() -> String {
+    format!("{SESSION_COOKIE}=; Path=/; Max-Age=0; HttpOnly; SameSite=Lax")
 }
 
 /// Halaman 404 bawaan saat tidak ada controller/override yang cocok.

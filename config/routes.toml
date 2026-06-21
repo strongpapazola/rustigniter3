@@ -24,6 +24,19 @@ to   = "notes_api/_resource"
 from = "api/notes/(:num)"
 to   = "notes_api/_resource/$1"
 
+# Auth (M7): URL bersih -> controller auth.
+[[routes]]
+from = "login"
+to   = "auth/login"
+
+[[routes]]
+from = "logout"
+to   = "auth/logout"
+
+[[routes]]
+from = "dashboard"
+to   = "auth/dashboard"
+
 # Contoh lain (dikomentari):
 # [[routes]]
 # from = "blog/(:any)"

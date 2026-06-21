@@ -21,3 +21,5 @@ minijinja = { version = "2", features = ["loader"] }
 regex = "1"
 rusqlite = { version = "0.32", features = ["bundled"] }
 tokio-postgres = "0.7"
+rand = "0.8"
+sha2 = "0.10"

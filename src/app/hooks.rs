@@ -1,8 +1,9 @@
 //! Hooks aplikasi (analog `application/hooks/` + `config/hooks.php` di CodeIgniter).
 //!
-//! Tiga contoh middleware lintas-cutting:
+//! Empat contoh middleware lintas-cutting:
 //! - [`RequestLogger`]  — mencatat tiap request & status response ke stdout.
 //! - [`PoweredBy`]      — menambah header `X-Powered-By` ke semua response.
+//! - [`CsrfGuard`]      — memvalidasi token CSRF untuk operasi tulis non-API.
 //! - [`ApiKeyGuard`]    — menolak operasi tulis pada `/api/*` tanpa header API key.
 
 use crate::system::{Ctx, Hook, HookResult, Response};
@@ -29,6 +30,27 @@ pub struct PoweredBy;
 impl Hook for PoweredBy {
     fn after(&self, _ctx: &mut Ctx, response: Response) -> Response {
         response.with_header("X-Powered-By", "RustIgniter/3.0.0")
+    }
+}
+
+/// Validasi token CSRF untuk operasi tulis (POST/PUT/PATCH/DELETE) pada path **non-API**.
+/// Endpoint `api/*` dikecualikan karena memakai autentikasi API key yang stateless.
+/// Token disisipkan ke form lewat field tersembunyi `csrf_token` (lihat view).
+pub struct CsrfGuard;
+
+impl Hook for CsrfGuard {
+    fn before(&self, ctx: &mut Ctx) -> HookResult {
+        let path = ctx.request.path.trim_start_matches('/');
+        let is_write = matches!(ctx.method(), "POST" | "PUT" | "PATCH" | "DELETE");
+
+        if is_write && !path.starts_with("api/") {
+            let token = ctx.csrf_token();
+            let submitted = ctx.post("csrf_token").unwrap_or("");
+            if token.is_empty() || token != submitted {
+                return HookResult::Halt(Response::text(403, "Token CSRF tidak valid."));
+            }
+        }
+        HookResult::Continue
     }
 }
 

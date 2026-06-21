@@ -14,6 +14,7 @@ use crate::system::config::Config;
 use crate::system::database::Database;
 use crate::system::request::Request;
 use crate::system::response::Response;
+use crate::system::session::Session;
 use crate::system::view::View;
 use serde_json::{Map, Value};
 
@@ -35,6 +36,8 @@ pub struct Ctx<'a> {
     config: &'a Config,
     view: &'a View,
     db: &'a Database,
+    /// Sesi pengunjung (userdata + flashdata + token CSRF).
+    pub session: Session,
     /// Variabel view yang terkumpul (CI: `$this->load->vars()`).
     vars: Map<String, Value>,
 }
@@ -46,6 +49,7 @@ impl<'a> Ctx<'a> {
         config: &'a Config,
         view: &'a View,
         db: &'a Database,
+        session: Session,
     ) -> Self {
         Self {
             request,
@@ -53,8 +57,19 @@ impl<'a> Ctx<'a> {
             config,
             view,
             db,
+            session,
             vars: Map::new(),
         }
+    }
+
+    /// Nilai cookie request berdasarkan nama.
+    pub fn cookie(&self, name: &str) -> Option<String> {
+        self.request.cookie(name)
+    }
+
+    /// Token CSRF sesi saat ini (untuk disisipkan ke form).
+    pub fn csrf_token(&self) -> String {
+        self.session.csrf_token()
     }
 
     /// Akses database (CI: `$this->db`). Mulai query dengan `ctx.db().table("...")`.
@@ -160,6 +175,10 @@ impl<'a> Ctx<'a> {
     /// (CI: `$this->load->view('nama', $data)`). `data` digabung di atas variabel terkumpul.
     pub fn view(&self, name: &str, data: Value) -> Response {
         let mut merged = self.vars.clone();
+        // Auto-inject token CSRF & flashdata agar tersedia di semua template
+        // (bisa ditimpa oleh data eksplisit di bawah).
+        merged.insert("csrf_token".to_string(), Value::String(self.session.csrf_token()));
+        merged.insert("flash".to_string(), Value::Object(self.session.flash_all()));
         if let Value::Object(map) = data {
             for (k, v) in map {
                 merged.insert(k, v);

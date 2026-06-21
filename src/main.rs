@@ -19,7 +19,7 @@ use hyper::{Request as HyperRequest, Response as HyperResponse};
 use hyper_util::rt::TokioIo;
 use tokio::net::TcpListener;
 
-use system::{App, Config, Database, Registry, Request, Router, RoutesConfig, View};
+use system::{App, Config, Database, Registry, Request, Router, RoutesConfig, SessionStore, View};
 
 #[tokio::main]
 async fn main() {
@@ -86,6 +86,7 @@ async fn bootstrap() -> Result<App, String> {
     app::register(&mut registry);
 
     let hooks = app::register_hooks();
+    let sessions = SessionStore::new();
 
     Ok(App {
         config,
@@ -94,6 +95,7 @@ async fn bootstrap() -> Result<App, String> {
         registry,
         database,
         hooks,
+        sessions,
     })
 }
 

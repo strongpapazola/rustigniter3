@@ -46,6 +46,7 @@
 		</ul>
 
 		<form action="{{ base_url('notes/add') }}" method="post">
+			<input type="hidden" name="csrf_token" value="{{ csrf_token }}">
 			<input type="text" name="text" value="{{ old_text }}" placeholder="Tulis catatan baru…" autofocus>
 			<button type="submit">Tambah</button>
 		</form>

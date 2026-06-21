@@ -36,6 +36,9 @@ cargo test       # menjalankan unit test
 | Form Validation | ✅ |
 | REST resource (routing sadar verb, JSON in/out) | ✅ |
 | Hooks / Middleware (before/after, halt) | ✅ |
+| Session + flashdata (cookie, in-memory store) | ✅ |
+| Auth (login/logout, route terproteksi, password hash) | ✅ |
+| Security: XSS auto-escape, CSRF token | ✅ |
 
 ## Dokumentasi
 
@@ -44,8 +47,8 @@ User Guide bergaya CodeIgniter 3 ada di **[`user_guide/index.md`](user_guide/ind
 - [Memulai](user_guide/general/getting_started.md)
 - [URL](user_guide/general/urls.md) · [Routing](user_guide/general/routing.md)
 - [Controllers](user_guide/general/controllers.md) · [Views](user_guide/general/views.md) · [Models](user_guide/general/models.md)
-- [Config & Auto-load](user_guide/general/config.md) · [Hooks](user_guide/general/hooks.md)
-- [Form Validation](user_guide/libraries/form_validation.md) · [REST Resource](user_guide/libraries/rest.md)
+- [Config & Auto-load](user_guide/general/config.md) · [Hooks](user_guide/general/hooks.md) · [Security](user_guide/general/security.md)
+- [Form Validation](user_guide/libraries/form_validation.md) · [Sessions](user_guide/libraries/sessions.md) · [REST Resource](user_guide/libraries/rest.md)
 - [Query Builder](user_guide/database/query_builder.md) · [URL Helper](user_guide/helpers/url_helper.md)
 
 ## Struktur
